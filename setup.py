@@ -134,7 +134,13 @@ class CustomBuildPy(build_py):
             shutil.copytree(os.path.join(current_dir, name), dst)
 
     def generate_pyi_file(self):
-        generate_pyi_file(name='_C', root='./csrc', output_dir='./stubs')
+        # Stub generation is best-effort: scripts/generate_pyi.py cannot parse
+        # the single-string TORCH_LIBRARY schema form (m.def("name(Tensor t)
+        # -> bool")) used in torch_library_api.cpp, which is fatal on v0.2.7.
+        try:
+            generate_pyi_file(name='_C', root='./csrc', output_dir='./stubs')
+        except Exception as e:
+            print(f"Warning: pyi stub generation skipped: {e}")
         pyi_source = os.path.join(current_dir, 'stubs', '_C.pyi')
         pyi_target = os.path.join(self.build_lib, 'deep_gemm', '_C.pyi')
 
